@@ -1,4 +1,6 @@
-class JsonTaskRepository : ITaskRepository
+using System.Text.Json;
+
+public class JsonTaskRepository : ITaskRepository
 {
     private readonly string _filePath;
     public JsonTaskRepository(string filePath) => _filePath = filePath;
@@ -9,6 +11,10 @@ class JsonTaskRepository : ITaskRepository
             return new List<TaskItem>();
         }
         string json = File.ReadAllText(_filePath);
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return new List<TaskItem>();
+        }
         var tasks = JsonSerializer.Deserialize<List<TaskItem>>(json);
         return tasks ?? new List<TaskItem>();
     }

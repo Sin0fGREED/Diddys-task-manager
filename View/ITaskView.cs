@@ -1,4 +1,4 @@
-interface ITaskView
+public interface ITaskView
 {
     void Run();
 } 
