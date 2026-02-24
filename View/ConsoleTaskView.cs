@@ -5,7 +5,7 @@ public class ConsoleTaskView : ITaskView
     {
         _service = service;
     }
-    void DisplayTasks(IEnumerable<TaskItem> tasks)
+    void DisplayTasks(TaskItem[] tasks)
     {
         Console.Clear();
         Console.WriteLine("==== ToDo List ====");
@@ -15,7 +15,7 @@ public class ConsoleTaskView : ITaskView
     string Prompt(string prompt)
     {
         Console.Write(prompt);
-        return Console.ReadLine();
+        return Console.ReadLine() ?? string.Empty;
     }
     public void Run()
     {

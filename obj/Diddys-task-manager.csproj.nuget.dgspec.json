@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\hendr\\Documents\\GitHub\\Diddys-task-manager\\Diddys-task-manager.csproj": {}
+    "C:\\WebDev\\Diddys-task-manager\\Diddys-task-manager.csproj": {}
   },
   "projects": {
-    "C:\\Users\\hendr\\Documents\\GitHub\\Diddys-task-manager\\Diddys-task-manager.csproj": {
+    "C:\\WebDev\\Diddys-task-manager\\Diddys-task-manager.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\hendr\\Documents\\GitHub\\Diddys-task-manager\\Diddys-task-manager.csproj",
+        "projectUniqueName": "C:\\WebDev\\Diddys-task-manager\\Diddys-task-manager.csproj",
         "projectName": "Diddys-task-manager",
-        "projectPath": "C:\\Users\\hendr\\Documents\\GitHub\\Diddys-task-manager\\Diddys-task-manager.csproj",
-        "packagesPath": "C:\\Users\\hendr\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\hendr\\Documents\\GitHub\\Diddys-task-manager\\obj\\",
+        "projectPath": "C:\\WebDev\\Diddys-task-manager\\Diddys-task-manager.csproj",
+        "packagesPath": "C:\\Users\\stiva\\.nuget\\packages\\",
+        "outputPath": "C:\\WebDev\\Diddys-task-manager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\hendr\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\stiva\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -65,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.307/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
