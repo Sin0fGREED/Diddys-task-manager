@@ -10,4 +10,4 @@ class Program
         // Run the view
         view.Run();
     }
-} 
+}
