@@ -1,11 +1,11 @@
-public class ConsoleTaskView : ITaskView
+public class ConsoleTaskView<T>
 {
-    private readonly ITaskService _service;
-    public ConsoleTaskView(ITaskService service)
+    private readonly ITaskService<T> _service;
+    public ConsoleTaskView(ITaskService<T> service)
     {
         _service = service;
     }
-    void DisplayTasks(TaskItem[] tasks)
+    void DisplayTasks(T[] tasks)
     {
         Console.Clear();
         Console.WriteLine("==== ToDo List ====");
@@ -26,7 +26,8 @@ public class ConsoleTaskView : ITaskView
             Console.WriteLine("1. Add Task");
             Console.WriteLine("2. Remove Task");
             Console.WriteLine("3. Toggle Task State");
-            Console.WriteLine("4. Exit");
+            Console.WriteLine("4. List Tasks");
+            Console.WriteLine("5. Exit");
             string option=Prompt("Select an option: ");
             switch (option)
             {
@@ -49,6 +50,12 @@ public class ConsoleTaskView : ITaskView
                 }
                 break;
                 case "4":
+                Console.WriteLine("Tasks: ");
+                _service.ListTasks();
+                Console.WriteLine("Press any key to continue...");
+                Console.ReadKey();
+                break;
+                case "5":
                 return;
                 default:
                 Console.WriteLine("Invalid option. Press any key to continue...");

@@ -1,5 +1,5 @@
-public interface ITaskRepository
+public interface ITaskRepository<T>
 {
-    TaskItem[] LoadTasks();
-    void SaveTasks(TaskItem[] tasks);
+    T[] LoadTasks();
+    void SaveTasks(T[] tasks);
 }

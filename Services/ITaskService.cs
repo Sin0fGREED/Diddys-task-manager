@@ -1,7 +1,9 @@
-public interface ITaskService 
+public interface ITaskService<T>
 {
-    TaskItem[] GetAllTasks();
+    T[] GetAllTasks();
     void AddTask(string description);
     void RemoveTask(int id);
     void ToggleTaskCompletion(int id);
+
+    void ListTasks();
 }

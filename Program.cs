@@ -3,9 +3,9 @@
     static void Main(string[] args)
     {
         string filePath = "tasks.json";
-        ITaskRepository repository = new JsonTaskRepository(filePath);
-        ITaskService service = new TaskService(repository);
-        ITaskView view = new ConsoleTaskView(service);
+        ITaskRepository<TaskItem> repository = new JsonTaskRepository<TaskItem>(filePath);
+        ITaskService<TaskItem> service = new TaskService<TaskItem>(repository);
+        ConsoleTaskView<TaskItem> view = new ConsoleTaskView<TaskItem>(service);
         view.Run();
     }
 }
