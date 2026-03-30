@@ -5,12 +5,16 @@ public class ConsoleTaskView<T>
     {
         _service = service;
     }
-    void DisplayTasks(T[] tasks)
+    void DisplayTasks(T[]? tasks)
     {
+        if (tasks == null) return;
         Console.Clear();
         Console.WriteLine("==== ToDo List ====");
         foreach (var task in tasks)
-        Console.WriteLine($"{task}");
+        {
+            if (task != null)
+                Console.WriteLine($"ID: {task.GetType().GetProperty("Id")?.GetValue(task) ?? "N/A"}, Description: {task.GetType().GetProperty("Description")?.GetValue(task) ?? "N/A"}, Completed: {task.GetType().GetProperty("Completed")?.GetValue(task) ?? "N/A"}, Priority: {task.GetType().GetProperty("Priority")?.GetValue(task) ?? "N/A"}, Created: {task.GetType().GetProperty("CreationDate")?.GetValue(task) ?? "N/A"}");
+        }
     }
     string Prompt(string prompt)
     {
@@ -27,8 +31,9 @@ public class ConsoleTaskView<T>
             Console.WriteLine("2. Remove Task");
             Console.WriteLine("3. Toggle Task State");
             Console.WriteLine("4. List Tasks");
-            Console.WriteLine("5. Exit");
-            string option=Prompt("Select an option: ");
+            Console.WriteLine("5. Update Task");
+            Console.WriteLine("6. Exit");
+            string option = Prompt("Select an option: ");
             switch (option)
             {
                 case "1":
@@ -95,6 +100,46 @@ public class ConsoleTaskView<T>
                     Console.ReadKey();
                     break;
                 case "5":
+                    string updateIdStr = Prompt("Enter task id to update: ");
+                    if (int.TryParse(updateIdStr, out int updateId))
+                    {
+                        Console.WriteLine("What do you want to update?");
+                        Console.WriteLine("1. Task Name");
+                        Console.WriteLine("2. Priority");
+                        Console.WriteLine("3. Both");
+                        string updateChoice = Prompt("Choose option (1-3): ");
+                        string? newDescription = null;
+                        PriorityLevel? newPriority = null;
+                        if (updateChoice == "1" || updateChoice == "3")
+                        {
+                            newDescription = Prompt("Enter new task name/description: ");
+                        }
+                        if (updateChoice == "2" || updateChoice == "3")
+                        {
+                            Console.WriteLine("Select new priority:");
+                            Console.WriteLine("1. Low");
+                            Console.WriteLine("2. Medium");
+                            Console.WriteLine("3. High");
+                            string newPriorityInput = Prompt("Choose priority (1-3): ");
+                            switch (newPriorityInput)
+                            {
+                                case "1": newPriority = PriorityLevel.Low; break;
+                                case "2": newPriority = PriorityLevel.Medium; break;
+                                case "3": newPriority = PriorityLevel.High; break;
+                                default: Console.WriteLine("Invalid input, keeping current priority."); break;
+                            }
+                        }
+                        _service.UpdateTask(updateId, newDescription, newPriority);
+                        Console.WriteLine("Task updated. Press any key to continue...");
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        Console.WriteLine("Invalid task id. Press any key to continue...");
+                        Console.ReadKey();
+                    }
+                    break;
+                case "6":
                     return;
                 default:
                     Console.WriteLine("Invalid option. Press any key to continue...");

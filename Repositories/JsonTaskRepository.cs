@@ -5,24 +5,30 @@ public class JsonTaskRepository<T> : ITaskRepository<T>
     private readonly string _filePath;
     public JsonTaskRepository(string filePath) => _filePath = filePath;
 
-    public T[] LoadTasks()
+    public ITaskCollection<T> LoadTasks()
     {
+        var collection = new ArrayTaskCollection<T>();
         if (!File.Exists(_filePath))
         {
-            return new T[0];
+            return collection;
         }
         string json = File.ReadAllText(_filePath);
         if (string.IsNullOrWhiteSpace(json))
         {
-            return new T[0];
+            return collection;
         }
         var tasks = JsonSerializer.Deserialize<T[]>(json);
-        return tasks ?? new T[0];
+        if (tasks != null)
+        {
+            for (int i = 0; i < tasks.Length; i++)
+                collection.Add(tasks[i]);
+        }
+        return collection;
     }
 
-    public void SaveTasks(T[] tasks)
+    public void SaveTasks(ITaskCollection<T> tasks)
     {
-        string json = JsonSerializer.Serialize(tasks, new JsonSerializerOptions { WriteIndented = true });
+        string json = JsonSerializer.Serialize(tasks.ToArray(), new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(_filePath, json);
     }
 }

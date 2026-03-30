@@ -1,15 +1,15 @@
 class TaskService<T> : ITaskService<T> where T : TaskItem
 {
     private readonly ITaskRepository<T> _repository;
-    private T[] _tasks;
+    private ITaskCollection<T> _tasks;
 
-    public TaskService(ITaskRepository<T> repository)
+    public TaskService(ITaskRepository<T> repository, ITaskCollection<T>? collection = null)
     {
         _repository = repository;
-        _tasks = _repository.LoadTasks();
+        _tasks = collection ?? _repository.LoadTasks();
     }
 
-    public T[] GetAllTasks() => _tasks;
+    public T[] GetAllTasks() => _tasks.ToArray();
 
     public void AddTask(string description)
     {
@@ -18,61 +18,53 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
 
     public void AddTask(string description, PriorityLevel priority)
     {
-        int newId = _tasks.Length > 0 ? _tasks[_tasks.Length - 1].Id + 1 : 1;
+        int newId = 1;
+        T[] arr = _tasks.ToArray();
+        for (int i = 0; i < arr.Length; i++)
+        {
+            if (arr[i].Id >= newId) newId = arr[i].Id + 1;
+        }
         var newTask = new TaskItem { Id = newId, Description = description, Completed = false, Priority = priority, CreationDate = DateTime.Now };
-
-        T[] newTasks = new T[_tasks.Length + 1];
-        for (int i = 0; i < _tasks.Length; i++)
-            newTasks[i] = _tasks[i];
-        newTasks[_tasks.Length] = (T)(object)newTask;
-
-        _tasks = newTasks;
+        _tasks.Add((T)(object)newTask);
         _repository.SaveTasks(_tasks);
     }
 
     public void RemoveTask(int id)
     {
-        int index = -1;
-        for (int i = 0; i < _tasks.Length; i++)
+        T found = _tasks.FindById(id);
+        if (found != null)
         {
-            if (_tasks[i].Id == id)
+            _tasks.Remove(found);
+            T[] arr = _tasks.ToArray();
+            for (int i = 0; i < arr.Length; i++)
             {
-                index = i;
-                break;
+                arr[i].Id = i + 1;
             }
+            _tasks.Clear();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                _tasks.Add(arr[i]);
+            }
+            _repository.SaveTasks(_tasks);
         }
-
-        if (index == -1) return;
-
-        T[] newTasks = new T[_tasks.Length - 1];
-        for (int i = 0, j = 0; i < _tasks.Length; i++)
-        {
-            if (i != index)
-                newTasks[j++] = _tasks[i];
-        }
-
-        _tasks = newTasks;
-        _repository.SaveTasks(_tasks);
     }
 
     public void ToggleTaskCompletion(int id)
     {
-        for (int i = 0; i < _tasks.Length; i++)
+        T found = _tasks.FindById(id);
+        if (found != null)
         {
-            if (_tasks[i].Id == id)
-            {
-                _tasks[i].Completed = !_tasks[i].Completed;
-                _repository.SaveTasks(_tasks);
-                return;
-            }
+            found.Completed = !found.Completed;
+            _repository.SaveTasks(_tasks);
         }
     }
 
     public void ListTasks(string? filterBy = null, string? filterValue = null, string? sortBy = null)
     {
-        int[] indices = new int[_tasks.Length];
+        T[] arr = _tasks.ToArray();
+        int[] indices = new int[arr.Length];
         int filteredCount = 0;
-        for (int i = 0; i < _tasks.Length; i++)
+        for (int i = 0; i < arr.Length; i++)
         {
             bool keep = true;
             if (!string.IsNullOrEmpty(filterBy) && !string.IsNullOrEmpty(filterValue))
@@ -82,14 +74,14 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                     case "priority":
                         PriorityLevel pval;
                         keep = false;
-                        if (Enum.TryParse(filterValue, true, out pval) && _tasks[i].Priority == pval)
+                        if (Enum.TryParse(filterValue, true, out pval) && arr[i].Priority == pval)
                             keep = true;
                         break;
                     case "status":
-                        if (filterValue.Equals("completed", StringComparison.OrdinalIgnoreCase))
-                            keep = _tasks[i].Completed;
-                        else if (filterValue.Equals("pending", StringComparison.OrdinalIgnoreCase))
-                            keep = !_tasks[i].Completed;
+                        if (filterValue.Equals("completed", System.StringComparison.OrdinalIgnoreCase))
+                            keep = arr[i].Completed;
+                        else if (filterValue.Equals("pending", System.StringComparison.OrdinalIgnoreCase))
+                            keep = !arr[i].Completed;
                         break;
                 }
             }
@@ -111,19 +103,19 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                     switch (sortBy.ToLower())
                     {
                         case "prioritydesc":
-                            if (_tasks[idxA].Priority < _tasks[idxB].Priority) swap = true;
+                            if (arr[idxA].Priority < arr[idxB].Priority) swap = true;
                             break;
                         case "statusdesc":
-                            if (!_tasks[idxA].Completed && _tasks[idxB].Completed) swap = true;
+                            if (!arr[idxA].Completed && arr[idxB].Completed) swap = true;
                             break;
                         case "priority":
-                            if (_tasks[idxA].Priority > _tasks[idxB].Priority) swap = true;
+                            if (arr[idxA].Priority > arr[idxB].Priority) swap = true;
                             break;
                         case "creationdate":
-                            if (_tasks[idxA].CreationDate > _tasks[idxB].CreationDate) swap = true;
+                            if (arr[idxA].CreationDate > arr[idxB].CreationDate) swap = true;
                             break;
                         case "description":
-                            if (string.Compare(_tasks[idxA].Description, _tasks[idxB].Description, StringComparison.Ordinal) > 0) swap = true;
+                            if (string.Compare(arr[idxA].Description, arr[idxB].Description, System.StringComparison.Ordinal) > 0) swap = true;
                             break;
                     }
                     if (swap)
@@ -143,7 +135,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                 {
                     int idxA = indices[j];
                     int idxB = indices[j + 1];
-                    if (string.Compare(_tasks[idxA].Description, _tasks[idxB].Description, StringComparison.Ordinal) > 0)
+                    if (string.Compare(arr[idxA].Description, arr[idxB].Description, System.StringComparison.Ordinal) > 0)
                     {
                         int temp = indices[j];
                         indices[j] = indices[j + 1];
@@ -155,8 +147,20 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
 
         for (int i = 0; i < filteredCount; i++)
         {
-            var task = _tasks[indices[i]];
+            var task = arr[indices[i]];
             Console.WriteLine($"{task.Description} - {(task.Completed ? "Completed" : "Pending")} | Priority: {task.Priority} | Created: {task.CreationDate}");
+        }
+    }
+    public void UpdateTask(int id, string? newDescription = null, PriorityLevel? newPriority = null)
+    {
+        T found = _tasks.FindById(id);
+        if (found != null)
+        {
+            if (!string.IsNullOrEmpty(newDescription))
+                found.Description = newDescription;
+            if (newPriority.HasValue)
+                found.Priority = newPriority.Value;
+            _repository.SaveTasks(_tasks);
         }
     }
 }
