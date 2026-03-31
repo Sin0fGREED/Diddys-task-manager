@@ -10,33 +10,6 @@
   },
   {
     "Id": 2,
-    "Description": "T1",
-    "Completed": true,
-    "Priority": 1,
-    "CreationDate": "2026-03-24T13:30:39.9635361+01:00",
-    "CreatedBy": "",
-    "AssignedTo": null
-  },
-  {
-    "Id": 3,
-    "Description": "hkfkfkfk",
-    "Completed": false,
-    "Priority": 1,
-    "CreationDate": "2026-03-30T12:49:13.3454294+02:00",
-    "CreatedBy": "",
-    "AssignedTo": null
-  },
-  {
-    "Id": 4,
-    "Description": "T2",
-    "Completed": true,
-    "Priority": 1,
-    "CreationDate": "2026-03-30T20:55:16.1949083+02:00",
-    "CreatedBy": "",
-    "AssignedTo": null
-  },
-  {
-    "Id": 5,
     "Description": "test task",
     "Completed": false,
     "Priority": 1,
@@ -45,7 +18,7 @@
     "AssignedTo": "alice"
   },
   {
-    "Id": 6,
+    "Id": 3,
     "Description": "Get Muscular",
     "Completed": false,
     "Priority": 2,

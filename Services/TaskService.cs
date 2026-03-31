@@ -78,6 +78,56 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         }
     }
 
+    private void PrintTaskTable(T[] tasks)
+    {
+        if (tasks.Length == 0)
+        {
+            Console.WriteLine("No tasks found.");
+            return;
+        }
+
+        // Column widths
+        int idWidth = 4;
+        int descWidth = 25;
+        int statusWidth = 10;
+        int priorityWidth = 8;
+        int createdByWidth = 12;
+        int assignedToWidth = 12;
+
+        // Header
+        string idHeader = "ID".PadRight(idWidth);
+        string descHeader = "Description".PadRight(descWidth);
+        string statusHeader = "Status".PadRight(statusWidth);
+        string priorityHeader = "Priority".PadRight(priorityWidth);
+        string createdByHeader = "Created By".PadRight(createdByWidth);
+        string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
+        
+        string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader;
+        string separator = new string('─', header.Length);
+        
+        Console.WriteLine("┌" + separator + "┐");
+        Console.WriteLine("│ " + header + " │");
+        Console.WriteLine("├" + separator + "┤");
+
+        // Rows
+        foreach (var task in tasks)
+        {
+            string id = task.Id.ToString().PadRight(idWidth);
+            string desc = task.Description.Length > descWidth ? task.Description.Substring(0, descWidth - 3) + "..." : task.Description;
+            desc = desc.PadRight(descWidth);
+            string status = (task.Completed ? "✓ Done" : "⧖ Pending").PadRight(statusWidth);
+            string priority = task.Priority.ToString().PadRight(priorityWidth);
+            string createdBy = (task.CreatedBy ?? "Unknown").PadRight(createdByWidth);
+            string assignedTo = (task.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
+
+            string row = id + " | " + desc + " | " + status + " | " + priority + " | " + createdBy + " | " + assignedTo;
+            Console.WriteLine("│ " + row + " │");
+        }
+
+        // Footer
+        Console.WriteLine("└" + separator + "┘");
+    }
+
     public void ListTasks(string? filterBy = null, string? filterValue = null, string? sortBy = null)
     {
         T[] arr = _tasks.ToArray();
@@ -164,11 +214,14 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
             }
         }
 
+        T[] tasksToDisplay = new T[filteredCount];
         for (int i = 0; i < filteredCount; i++)
         {
             var task = arr[indices[i]];
-            Console.WriteLine($"{task.Description} - {(task.Completed ? "Completed" : "Pending")} | Priority: {task.Priority} | Created: {task.CreationDate} | CreatedBy: {task.CreatedBy} | AssignedTo: {task.AssignedTo ?? "Unassigned"}");
+            tasksToDisplay[i] = task;
         }
+
+        PrintTaskTable(tasksToDisplay);
     }
     
     public void UpdateTask(int id, string? newDescription = null, PriorityLevel? newPriority = null)
