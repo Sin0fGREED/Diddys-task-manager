@@ -1,11 +1,13 @@
 class TaskService<T> : ITaskService<T> where T : TaskItem
 {
     private readonly ITaskRepository<T> _repository;
+    private readonly IUserContext _userContext;
     private ITaskCollection<T> _tasks;
 
-    public TaskService(ITaskRepository<T> repository, ITaskCollection<T>? collection = null)
+    public TaskService(ITaskRepository<T> repository, IUserContext userContext, ITaskCollection<T>? collection = null)
     {
         _repository = repository;
+        _userContext = userContext;
         _tasks = collection ?? _repository.LoadTasks();
     }
 
@@ -24,7 +26,14 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         {
             if (arr[i].Id >= newId) newId = arr[i].Id + 1;
         }
-        var newTask = new TaskItem { Id = newId, Description = description, Completed = false, Priority = priority, CreationDate = DateTime.Now };
+        var newTask = new TaskItem { 
+            Id = newId, 
+            Description = description, 
+            Completed = false, 
+            Priority = priority, 
+            CreationDate = DateTime.Now,
+            CreatedBy = _userContext.CurrentUsername ?? "Unown"
+        };
         _tasks.Add((T)(object)newTask);
         _repository.SaveTasks(_tasks);
     }
@@ -34,6 +43,11 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         T found = _tasks.FindById(id);
         if (found != null)
         {
+            if (!CanModifyTask(id, _userContext.CurrentUsername ?? "Unknown"))
+            {
+                Console.WriteLine("Error: You do not have permission to delete this task.");
+                return;
+            }
             _tasks.Remove(found);
             T[] arr = _tasks.ToArray();
             for (int i = 0; i < arr.Length; i++)
@@ -54,6 +68,11 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         T found = _tasks.FindById(id);
         if (found != null)
         {
+            if (!CanModifyTask(id, _userContext.CurrentUsername ?? "Unknown"))
+            {
+                Console.WriteLine("Error: You do not have permission to modify this task.");
+                return;
+            }
             found.Completed = !found.Completed;
             _repository.SaveTasks(_tasks);
         }
@@ -148,19 +167,103 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         for (int i = 0; i < filteredCount; i++)
         {
             var task = arr[indices[i]];
-            Console.WriteLine($"{task.Description} - {(task.Completed ? "Completed" : "Pending")} | Priority: {task.Priority} | Created: {task.CreationDate}");
+            Console.WriteLine($"{task.Description} - {(task.Completed ? "Completed" : "Pending")} | Priority: {task.Priority} | Created: {task.CreationDate} | CreatedBy: {task.CreatedBy} | AssignedTo: {task.AssignedTo ?? "Unassigned"}");
         }
     }
+    
     public void UpdateTask(int id, string? newDescription = null, PriorityLevel? newPriority = null)
     {
         T found = _tasks.FindById(id);
         if (found != null)
         {
+            if (!CanModifyTask(id, _userContext.CurrentUsername ?? "Unknown"))
+            {
+                Console.WriteLine("Error: You do not have permission to modify this task.");
+                return;
+            }
             if (!string.IsNullOrEmpty(newDescription))
                 found.Description = newDescription;
             if (newPriority.HasValue)
                 found.Priority = newPriority.Value;
             _repository.SaveTasks(_tasks);
         }
+    }
+
+    // New methods for task assignment
+    public void AssignTask(int id, string assigneeName)
+    {
+        T found = _tasks.FindById(id);
+        if (found != null)
+        {
+            if (found.CreatedBy != _userContext.CurrentUsername && _userContext.CurrentUsername != "admin")
+            {
+                Console.WriteLine("Error: Only the task creator or admin can assign this task.");
+                return;
+            }
+            found.AssignedTo = assigneeName;
+            _repository.SaveTasks(_tasks);
+            Console.WriteLine($"Task {id} assigned to {assigneeName}.");
+        }
+    }
+
+    public void UnassignTask(int id)
+    {
+        T found = _tasks.FindById(id);
+        if (found != null)
+        {
+            if (found.CreatedBy != _userContext.CurrentUsername && _userContext.CurrentUsername != "admin")
+            {
+                Console.WriteLine("Error: Only the task creator or admin can unassign this task.");
+                return;
+            }
+            found.AssignedTo = null;
+            _repository.SaveTasks(_tasks);
+            Console.WriteLine($"Task {id} unassigned.");
+        }
+    }
+
+    public T[] GetTasksAssignedToUser(string username)
+    {
+        T[] arr = _tasks.ToArray();
+        var assigned = new System.Collections.Generic.List<T>();
+        for (int i = 0; i < arr.Length; i++)
+        {
+            if (arr[i].AssignedTo == username)
+            {
+                assigned.Add(arr[i]);
+            }
+        }
+        return assigned.ToArray();
+    }
+
+    public T[] GetTasksCreatedByUser(string username)
+    {
+        T[] arr = _tasks.ToArray();
+        var created = new System.Collections.Generic.List<T>();
+        for (int i = 0; i < arr.Length; i++)
+        {
+            if (arr[i].CreatedBy == username)
+            {
+                created.Add(arr[i]);
+            }
+        }
+        return created.ToArray();
+    }
+
+    public bool CanModifyTask(int taskId, string username)
+    {
+        T found = _tasks.FindById(taskId);
+        if (found == null) return false;
+
+        // Creator can always modify their own tasks
+        if (found.CreatedBy == username) return true;
+
+        // Assigned user can modify task status
+        if (found.AssignedTo == username) return true;
+
+        // Admin can modify any task
+        if (username == "admin") return true;
+
+        return false;
     }
 }

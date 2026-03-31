@@ -22,8 +22,31 @@
         for (int i = 0; i < arr.Length; i++)
             collection.Add(arr[i]);
 
-        ITaskService<TaskItem> service = new TaskService<TaskItem>(repository, collection);
-        ConsoleTaskView<TaskItem> view = new ConsoleTaskView<TaskItem>(service);
+        IUserContext userContext = new UserContext();
+
+        Console.Clear();
+        Console.WriteLine("==== TASK MANAGER LOGIN ====");
+        bool loggedIn = false;
+        while (!loggedIn)
+        {
+            Console.Write("Enter username: ");
+            string username = Console.ReadLine() ?? "";
+            
+            if (!string.IsNullOrEmpty(username))
+            {
+                userContext.SetCurrentUser(username);
+                loggedIn = true;
+                Console.WriteLine($"Welcome, {username}!");
+                System.Threading.Thread.Sleep(1000);
+            }
+            else
+            {
+                Console.WriteLine("Username cannot be empty. Please try again.");
+            }
+        }
+
+        ITaskService<TaskItem> service = new TaskService<TaskItem>(repository, userContext, collection);
+        ConsoleTaskView<TaskItem> view = new ConsoleTaskView<TaskItem>(service, userContext);
         view.Run();
     }
 }
