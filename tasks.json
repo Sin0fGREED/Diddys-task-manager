@@ -2,7 +2,7 @@
   {
     "Id": 1,
     "Description": "Cleaning",
-    "Completed": false,
+    "Status": 0,
     "Priority": 0,
     "CreationDate": "2026-03-10T13:54:16.5036647+01:00",
     "CreatedBy": "",
@@ -11,7 +11,7 @@
   {
     "Id": 2,
     "Description": "test task",
-    "Completed": false,
+    "Status": 0,
     "Priority": 1,
     "CreationDate": "2026-03-31T05:48:43.2059913+02:00",
     "CreatedBy": "alice",
@@ -20,10 +20,46 @@
   {
     "Id": 3,
     "Description": "Get Muscular",
-    "Completed": false,
+    "Status": 0,
     "Priority": 2,
     "CreationDate": "2026-03-31T06:01:19.6849966+02:00",
     "CreatedBy": "Pigeon Doktor",
     "AssignedTo": "STEVAN"
+  },
+  {
+    "Id": 4,
+    "Description": "Debug",
+    "Status": 0,
+    "Priority": 2,
+    "CreationDate": "2026-03-31T10:07:13.6940917+02:00",
+    "CreatedBy": "alice",
+    "AssignedTo": null
+  },
+  {
+    "Id": 5,
+    "Description": "Fixup",
+    "Status": 0,
+    "Priority": 0,
+    "CreationDate": "2026-03-31T10:07:50.6955391+02:00",
+    "CreatedBy": "alice",
+    "AssignedTo": null
+  },
+  {
+    "Id": 6,
+    "Description": "Program",
+    "Status": 0,
+    "Priority": 0,
+    "CreationDate": "2026-03-31T10:08:51.9936596+02:00",
+    "CreatedBy": "alice",
+    "AssignedTo": null
+  },
+  {
+    "Id": 7,
+    "Description": "Checkup",
+    "Status": 1,
+    "Priority": 2,
+    "CreationDate": "2026-03-31T10:21:59.0740065+02:00",
+    "CreatedBy": "Hendrik",
+    "AssignedTo": "alice"
   }
 ]

@@ -29,7 +29,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         var newTask = new TaskItem { 
             Id = newId, 
             Description = description, 
-            Completed = false, 
+            Status = StatusLevel.ToDo, 
             Priority = priority, 
             CreationDate = DateTime.Now,
             CreatedBy = _userContext.CurrentUsername ?? "Unown"
@@ -63,7 +63,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         }
     }
 
-    public void ToggleTaskCompletion(int id)
+    public void CycleTaskStatus(int id)
     {
         T found = _tasks.FindById(id);
         if (found != null)
@@ -73,7 +73,28 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                 Console.WriteLine("Error: You do not have permission to modify this task.");
                 return;
             }
-            found.Completed = !found.Completed;
+            found.Status = found.Status switch
+            {
+                StatusLevel.ToDo => StatusLevel.InProgress,
+                StatusLevel.InProgress => StatusLevel.Done,
+                StatusLevel.Done => StatusLevel.ToDo,
+                _ => StatusLevel.ToDo
+            };
+            _repository.SaveTasks(_tasks);
+        }
+    }
+
+    public void SetTaskStatus(int id, StatusLevel status)
+    {
+        T found = _tasks.FindById(id);
+        if (found != null)
+        {
+            if (!CanModifyTask(id, _userContext.CurrentUsername ?? "Unknown"))
+            {
+                Console.WriteLine("Error: You do not have permission to modify this task.");
+                return;
+            }
+            found.Status = status;
             _repository.SaveTasks(_tasks);
         }
     }
@@ -115,7 +136,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
             string id = task.Id.ToString().PadRight(idWidth);
             string desc = task.Description.Length > descWidth ? task.Description.Substring(0, descWidth - 3) + "..." : task.Description;
             desc = desc.PadRight(descWidth);
-            string status = (task.Completed ? "✓ Done" : "⧖ Pending").PadRight(statusWidth);
+            string status = (task.Status switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
             string priority = task.Priority.ToString().PadRight(priorityWidth);
             string createdBy = (task.CreatedBy ?? "Unknown").PadRight(createdByWidth);
             string assignedTo = (task.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
@@ -147,10 +168,8 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                             keep = true;
                         break;
                     case "status":
-                        if (filterValue.Equals("completed", System.StringComparison.OrdinalIgnoreCase))
-                            keep = arr[i].Completed;
-                        else if (filterValue.Equals("pending", System.StringComparison.OrdinalIgnoreCase))
-                            keep = !arr[i].Completed;
+                        if (Enum.TryParse(filterValue, true, out StatusLevel sval))
+                            keep = arr[i].Status == sval;
                         break;
                 }
             }
@@ -175,7 +194,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                             if (arr[idxA].Priority < arr[idxB].Priority) swap = true;
                             break;
                         case "statusdesc":
-                            if (!arr[idxA].Completed && arr[idxB].Completed) swap = true;
+                            if (arr[idxA].Status < arr[idxB].Status) swap = true;
                             break;
                         case "priority":
                             if (arr[idxA].Priority > arr[idxB].Priority) swap = true;

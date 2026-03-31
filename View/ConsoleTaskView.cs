@@ -114,7 +114,7 @@ public class ConsoleTaskView<T> : ITaskView
                     descStr = descStr.Substring(0, descWidth - 3) + "...";
                 string desc = descStr.PadRight(descWidth);
                 
-                string status = ((taskObj?.Completed ?? false) ? "✓ Done" : "⧖ Pending").PadRight(statusWidth);
+                string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                 string priority = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
                 string createdBy = (taskObj?.CreatedBy ?? "Unknown").PadRight(createdByWidth);
                 string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
@@ -154,7 +154,7 @@ public class ConsoleTaskView<T> : ITaskView
             Console.WriteLine("╠════════════════════════════════════════╣");
             Console.WriteLine("║ 1. Add Task                            ║");
             Console.WriteLine("║ 2. Remove Task                         ║");
-            Console.WriteLine("║ 3. Toggle Task State                   ║");
+            Console.WriteLine("║ 3. Change Task Status                  ║");
             Console.WriteLine("║ 4. List Tasks (with filters)           ║");
             Console.WriteLine("║ 5. Update Task                         ║");
             Console.WriteLine("║ 6. Assign Task                         ║");
@@ -229,8 +229,8 @@ public class ConsoleTaskView<T> : ITaskView
                 case "3":
                     Console.Clear();
                     PrintTitle();
-                    PrintPageHeader("Toggle Task State");
-                    string toggleIdStr = Prompt("Enter task id to toggle: ");
+                    PrintPageHeader("Change Task Status");
+                    string toggleIdStr = Prompt("Enter task id to change status: ");
                     if (string.IsNullOrWhiteSpace(toggleIdStr))
                     {
                         PrintError("Task ID cannot be empty.");
@@ -245,8 +245,23 @@ public class ConsoleTaskView<T> : ITaskView
                             Console.ReadKey();
                             break;
                         }
-                        _service.ToggleTaskCompletion(toggleId);
-                        PrintSuccess("Task status toggled!");
+                        PrintInfo("Select new status:");
+                        Console.WriteLine("1. To Do");
+                        Console.WriteLine("2. In Progress");
+                        Console.WriteLine("3. Done");
+                        string statusInput = Prompt("Choose status (1-3): ");
+                        StatusLevel newStatus = StatusLevel.ToDo;
+                        switch (statusInput)
+                        {
+                            case "1": newStatus = StatusLevel.ToDo; break;
+                            case "2": newStatus = StatusLevel.InProgress; break;
+                            case "3": newStatus = StatusLevel.Done; break;
+                            default:
+                                PrintError("Invalid input, defaulting to To Do.");
+                                break;
+                        }
+                        _service.SetTaskStatus(toggleId, newStatus);
+                        PrintSuccess("Task status updated!");
                         Console.ReadKey();
                     }
                     else
@@ -261,7 +276,7 @@ public class ConsoleTaskView<T> : ITaskView
                     PrintPageHeader("Filtered Tasks");
                     PrintInfo("How would you like to filter tasks?");
                     Console.WriteLine("1. By Priority (High → Low)");
-                    Console.WriteLine("2. By Status (Completed → Pending)");
+                    Console.WriteLine("2. By Status (Done → To Do)");
                     Console.WriteLine("3. By Creation Date");
                     Console.WriteLine("4. No Filter (show all)");
                     string filterOption = Prompt("Choose filter option (1-4): ");
@@ -459,7 +474,7 @@ public class ConsoleTaskView<T> : ITaskView
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
                             
-                            string status = ((taskObj?.Completed ?? false) ? "✓ Done" : "⧖ Pending").PadRight(statusWidth);
+                            string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string priorityStr = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
 
                             string row = id + " | " + desc + " | " + status + " | " + priorityStr;
@@ -509,7 +524,7 @@ public class ConsoleTaskView<T> : ITaskView
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
                             
-                            string status = ((taskObj?.Completed ?? false) ? "✓ Done" : "⧖ Pending").PadRight(statusWidth);
+                            string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
 
                             string row = id + " | " + desc + " | " + status + " | " + assignedTo;
