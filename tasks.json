@@ -4,27 +4,53 @@
     "Description": "Cleaning",
     "Completed": false,
     "Priority": 0,
-    "CreationDate": "2026-03-10T13:54:16.5036647+01:00"
+    "CreationDate": "2026-03-10T13:54:16.5036647+01:00",
+    "CreatedBy": "",
+    "AssignedTo": null
   },
   {
     "Id": 2,
     "Description": "T1",
     "Completed": true,
     "Priority": 1,
-    "CreationDate": "2026-03-24T13:30:39.9635361+01:00"
+    "CreationDate": "2026-03-24T13:30:39.9635361+01:00",
+    "CreatedBy": "",
+    "AssignedTo": null
   },
   {
     "Id": 3,
     "Description": "hkfkfkfk",
     "Completed": false,
     "Priority": 1,
-    "CreationDate": "2026-03-30T12:49:13.3454294+02:00"
+    "CreationDate": "2026-03-30T12:49:13.3454294+02:00",
+    "CreatedBy": "",
+    "AssignedTo": null
   },
   {
     "Id": 4,
     "Description": "T2",
     "Completed": true,
     "Priority": 1,
-    "CreationDate": "2026-03-30T20:55:16.1949083+02:00"
+    "CreationDate": "2026-03-30T20:55:16.1949083+02:00",
+    "CreatedBy": "",
+    "AssignedTo": null
+  },
+  {
+    "Id": 5,
+    "Description": "test task",
+    "Completed": false,
+    "Priority": 1,
+    "CreationDate": "2026-03-31T05:48:43.2059913+02:00",
+    "CreatedBy": "alice",
+    "AssignedTo": "alice"
+  },
+  {
+    "Id": 6,
+    "Description": "Get Muscular",
+    "Completed": false,
+    "Priority": 2,
+    "CreationDate": "2026-03-31T06:01:19.6849966+02:00",
+    "CreatedBy": "Pigeon Doktor",
+    "AssignedTo": "STEVAN"
   }
 ]
