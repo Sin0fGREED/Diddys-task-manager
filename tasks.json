@@ -47,11 +47,11 @@
   {
     "Id": 6,
     "Description": "Program",
-    "Status": 0,
+    "Status": 2,
     "Priority": 0,
     "CreationDate": "2026-03-31T10:08:51.9936596+02:00",
     "CreatedBy": "alice",
-    "AssignedTo": null
+    "AssignedTo": "Hendrik"
   },
   {
     "Id": 7,

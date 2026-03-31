@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Diddys-task-manager")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+99550d7629d773056ba09c040101e8767f47eb80")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8e3ef7088cc7deec7db7d082a2b804b007b4abe")]
 [assembly: System.Reflection.AssemblyProductAttribute("Diddys-task-manager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Diddys-task-manager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

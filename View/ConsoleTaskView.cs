@@ -74,58 +74,75 @@ public class ConsoleTaskView<T> : ITaskView
     void DisplayTasks(T[]? tasks)
     {
         if (tasks == null || tasks.Length == 0) return;
-        
-        Console.WriteLine($"\n╔════════════════════════════════════════════════════════════════════╗");
-        Console.WriteLine($"║  ToDo List (Logged in as: {_userContext.CurrentUsername,-50} ║");
-        Console.WriteLine($"╚════════════════════════════════════════════════════════════════════╝\n");
 
-        // Column widths
-        int idWidth = 4;
-        int descWidth = 25;
-        int statusWidth = 10;
-        int priorityWidth = 8;
-        int createdByWidth = 12;
-        int assignedToWidth = 12;
+        Console.WriteLine($"\n╔════════════════════════════════════════════════════════════════════════════════╗");
+        Console.WriteLine($"║  Kanban Board (Logged in as: {_userContext.CurrentUsername,-48} ║");
+        Console.WriteLine($"╚════════════════════════════════════════════════════════════════════════════════╝\n");
 
-        // Header
-        string idHeader = "ID".PadRight(idWidth);
-        string descHeader = "Description".PadRight(descWidth);
-        string statusHeader = "Status".PadRight(statusWidth);
-        string priorityHeader = "Priority".PadRight(priorityWidth);
-        string createdByHeader = "Created By".PadRight(createdByWidth);
-        string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-        
-        string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader;
-                        string separator = new string('─', header.Length);
-        Console.WriteLine("┌" + separator + "┐");
-        Console.WriteLine("│ " + header + " │");
-        Console.WriteLine("├" + separator + "┤");
+        // Split tasks into 3 columns by status
+        var todoList = new System.Collections.Generic.List<TaskItem>();
+        var inProgressList = new System.Collections.Generic.List<TaskItem>();
+        var doneList = new System.Collections.Generic.List<TaskItem>();
 
-        // Rows
         foreach (var task in tasks)
         {
-            if (task != null)
+            var taskObj = task as TaskItem;
+            if (taskObj == null) continue;
+            switch (taskObj.Status)
             {
-                var taskObj = task as TaskItem;
-                string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                
-                string descStr = taskObj?.Description ?? "N/A";
-                if (descStr.Length > descWidth)
-                    descStr = descStr.Substring(0, descWidth - 3) + "...";
-                string desc = descStr.PadRight(descWidth);
-                
-                string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
-                string priority = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
-                string createdBy = (taskObj?.CreatedBy ?? "Unknown").PadRight(createdByWidth);
-                string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
-
-                string row = id + " | " + desc + " | " + status + " | " + priority + " | " + createdBy + " | " + assignedTo;
-                Console.WriteLine("│ " + row + " │");
+                case StatusLevel.ToDo: todoList.Add(taskObj); break;
+                case StatusLevel.InProgress: inProgressList.Add(taskObj); break;
+                case StatusLevel.Done: doneList.Add(taskObj); break;
             }
         }
 
-        // Footer
-        Console.WriteLine("└" + separator + "┘\n");
+        int colWidth = 26;
+        int maxRows = Math.Max(todoList.Count, Math.Max(inProgressList.Count, doneList.Count));
+
+        // Column headers
+        string todoHeader = ("⧖ TO DO (" + todoList.Count + ")").PadRight(colWidth);
+        string progressHeader = ("▶ IN PROGRESS (" + inProgressList.Count + ")").PadRight(colWidth);
+        string doneHeader = ("✓ DONE (" + doneList.Count + ")").PadRight(colWidth);
+
+        string colSep = new string('─', colWidth);
+        Console.WriteLine("┌" + colSep + "┬" + colSep + "┬" + colSep + "┐");
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("│");
+        Console.ForegroundColor = ConsoleColor.Red; Console.Write(todoHeader);
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.Write("│");
+        Console.ForegroundColor = ConsoleColor.DarkYellow; Console.Write(progressHeader);
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.Write("│");
+        Console.ForegroundColor = ConsoleColor.Green; Console.Write(doneHeader);
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.WriteLine("│");
+        Console.ResetColor();
+        Console.WriteLine("├" + colSep + "┼" + colSep + "┼" + colSep + "┤");
+
+        // Rows
+        for (int i = 0; i < maxRows; i++)
+        {
+            string todoCell = FormatKanbanCell(i < todoList.Count ? todoList[i] : null, colWidth);
+            string progressCell = FormatKanbanCell(i < inProgressList.Count ? inProgressList[i] : null, colWidth);
+            string doneCell = FormatKanbanCell(i < doneList.Count ? doneList[i] : null, colWidth);
+            Console.WriteLine("│" + todoCell + "│" + progressCell + "│" + doneCell + "│");
+        }
+
+        Console.WriteLine("└" + colSep + "┴" + colSep + "┴" + colSep + "┘\n");
+    }
+
+    string FormatKanbanCell(TaskItem? task, int width)
+    {
+        if (task == null) return new string(' ', width);
+        string priTag = task.Priority switch
+        {
+            PriorityLevel.Low => "[L]",
+            PriorityLevel.Medium => "[M]",
+            PriorityLevel.High => "[H]",
+            _ => "[M]"
+        };
+        string cell = $"#{task.Id} {priTag} {task.Description}";
+        if (cell.Length > width)
+            cell = cell.Substring(0, width - 3) + "...";
+        return cell.PadRight(width);
     }
 
     string Prompt(string prompt)
@@ -140,14 +157,14 @@ public class ConsoleTaskView<T> : ITaskView
         PrintTitle();
         PrintInfo("Welcome to Task Manager! Starting up...");
         System.Threading.Thread.Sleep(1000);
-        
+
         while (true)
         {
             Console.Clear();
             PrintTitle();
             PrintPageHeader("Main Menu");
             DisplayTasks(_service.GetAllTasks());
-            
+
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("╔════════════════════════════════════════╗");
             Console.WriteLine("║          MAIN MENU OPTIONS             ║");
@@ -456,10 +473,10 @@ public class ConsoleTaskView<T> : ITaskView
                         string descHeader = "Description".PadRight(descWidth);
                         string statusHeader = "Status".PadRight(statusWidth);
                         string priorityHeader = "Priority".PadRight(priorityWidth);
-                        
+
                         string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader;
                         string separator = new string('─', header.Length);
-                        
+
                         Console.WriteLine("┌" + separator + "┐");
                         Console.WriteLine("│ " + header + " │");
                         Console.WriteLine("├" + separator + "┤");
@@ -468,12 +485,12 @@ public class ConsoleTaskView<T> : ITaskView
                         {
                             var taskObj = task as TaskItem;
                             string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                            
+
                             string descStr = taskObj?.Description ?? "N/A";
                             if (descStr.Length > descWidth)
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
-                            
+
                             string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string priorityStr = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
 
@@ -506,10 +523,10 @@ public class ConsoleTaskView<T> : ITaskView
                         string descHeader = "Description".PadRight(descWidth);
                         string statusHeader = "Status".PadRight(statusWidth);
                         string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-                        
+
                         string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + assignedToHeader;
                         string separator = new string('─', header.Length);
-                        
+
                         Console.WriteLine("┌" + separator + "┐");
                         Console.WriteLine("│ " + header + " │");
                         Console.WriteLine("├" + separator + "┤");
@@ -518,12 +535,12 @@ public class ConsoleTaskView<T> : ITaskView
                         {
                             var taskObj = task as TaskItem;
                             string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                            
+
                             string descStr = taskObj?.Description ?? "N/A";
                             if (descStr.Length > descWidth)
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
-                            
+
                             string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
 
