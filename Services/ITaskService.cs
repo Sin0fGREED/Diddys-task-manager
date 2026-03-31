@@ -3,7 +3,8 @@ public interface ITaskService<T>
     T[] GetAllTasks();
     void AddTask(string description, PriorityLevel priority = PriorityLevel.Medium);
     void RemoveTask(int id);
-    void ToggleTaskCompletion(int id);
+    void CycleTaskStatus(int id);
+    void SetTaskStatus(int id, StatusLevel status);
 
     void ListTasks(string? filterBy = null, string? filterValue = null, string? sortBy = null);
 
