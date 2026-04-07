@@ -8,12 +8,15 @@
         Console.WriteLine("Choose data structure for tasks:");
         Console.WriteLine("1. Array");
         Console.WriteLine("2. Linked List");
-        Console.Write("Enter choice (1 or 2): ");
+        Console.WriteLine("3. HashMap");
+        Console.Write("Enter choice (1, 2 or 3): ");
         string choice = Console.ReadLine() ?? "";
 
         ITaskCollection<TaskItem> collection;
         if (choice == "2")
             collection = new LinkedListTaskCollection<TaskItem>();
+        else if (choice == "3")
+            collection = new Model.HashMapTaskCollection();
         else
             collection = new ArrayTaskCollection<TaskItem>();
 
