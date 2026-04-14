@@ -9,7 +9,8 @@
         Console.WriteLine("1. Array");
         Console.WriteLine("2. Linked List");
         Console.WriteLine("3. HashMap");
-        Console.Write("Enter choice (1, 2 or 3): ");
+        Console.WriteLine("4. Binary Search Tree");
+        Console.Write("Enter choice (1, 2, 3 or 4): ");
         string choice = Console.ReadLine() ?? "";
 
         ITaskCollection<TaskItem> collection;
@@ -17,6 +18,8 @@
             collection = new LinkedListTaskCollection<TaskItem>();
         else if (choice == "3")
             collection = new Model.HashMapTaskCollection();
+        else if (choice == "4")
+            collection = new Model.BinarySearchTreeTaskCollection();
         else
             collection = new ArrayTaskCollection<TaskItem>();
 
