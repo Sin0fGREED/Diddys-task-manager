@@ -3,7 +3,7 @@ namespace Model
     public class HashMapTaskCollection : ITaskCollection<TaskItem>
     {
         private const int InitialCapacity = 16;
-        private Entry[] _buckets = new Entry[InitialCapacity];
+        private Entry?[] _buckets = new Entry?[InitialCapacity];
         private int _count = 0;
         public bool Dirty { get; set; } = false;
 

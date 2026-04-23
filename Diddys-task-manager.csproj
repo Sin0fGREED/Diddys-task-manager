@@ -7,4 +7,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Diddys-task-manager.Tests\**\*.cs" />
+    <None Remove="Diddys-task-manager.Tests\**\*" />
+  </ItemGroup>
+
 </Project>
