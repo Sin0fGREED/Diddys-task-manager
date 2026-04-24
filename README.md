@@ -2,4 +2,4 @@
 
 BIJDRAGE AAN PROJECT 1
 
-Stevan -> Alle data structures + feature 1 implemented.
+Stevan -> Alle data structures + feature 1 + unit tests implemented.
