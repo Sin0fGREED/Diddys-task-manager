@@ -74,7 +74,7 @@ public class ConsoleTaskView<T> : ITaskView
     void DisplayTasks(T[]? tasks)
     {
         if (tasks == null || tasks.Length == 0) return;
-        
+
         Console.WriteLine($"\n╔════════════════════════════════════════════════════════════════════╗");
         Console.WriteLine($"║  ToDo List (Logged in as: {_userContext.CurrentUsername,-50} ║");
         Console.WriteLine($"╚════════════════════════════════════════════════════════════════════╝\n");
@@ -86,6 +86,7 @@ public class ConsoleTaskView<T> : ITaskView
         int priorityWidth = 8;
         int createdByWidth = 12;
         int assignedToWidth = 12;
+        int depsWidth = 14;
 
         // Header
         string idHeader = "ID".PadRight(idWidth);
@@ -94,9 +95,10 @@ public class ConsoleTaskView<T> : ITaskView
         string priorityHeader = "Priority".PadRight(priorityWidth);
         string createdByHeader = "Created By".PadRight(createdByWidth);
         string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-        
-        string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader;
-                        string separator = new string('─', header.Length);
+        string depsHeader = "Depends On".PadRight(depsWidth);
+
+        string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader + " | " + depsHeader;
+        string separator = new string('─', header.Length);
         Console.WriteLine("┌" + separator + "┐");
         Console.WriteLine("│ " + header + " │");
         Console.WriteLine("├" + separator + "┤");
@@ -108,18 +110,29 @@ public class ConsoleTaskView<T> : ITaskView
             {
                 var taskObj = task as TaskItem;
                 string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                
+
                 string descStr = taskObj?.Description ?? "N/A";
                 if (descStr.Length > descWidth)
                     descStr = descStr.Substring(0, descWidth - 3) + "...";
                 string desc = descStr.PadRight(descWidth);
-                
+
                 string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                 string priority = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
                 string createdBy = (taskObj?.CreatedBy ?? "Unknown").PadRight(createdByWidth);
                 string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
 
-                string row = id + " | " + desc + " | " + status + " | " + priority + " | " + createdBy + " | " + assignedTo;
+                // Build dependency string (e.g. "→ 1,3" or "none")
+                string depsStr = "none";
+                if (taskObj?.DependsOnTaskIds != null && taskObj.DependsOnTaskIds.Length > 0)
+                {
+                    depsStr = "→ ";
+                    for (int i = 0; i < taskObj.DependsOnTaskIds.Length; i++)
+                        depsStr += (i == 0 ? "" : ",") + taskObj.DependsOnTaskIds[i];
+                }
+                if (depsStr.Length > depsWidth) depsStr = depsStr.Substring(0, depsWidth - 3) + "...";
+                string deps = depsStr.PadRight(depsWidth);
+
+                string row = id + " | " + desc + " | " + status + " | " + priority + " | " + createdBy + " | " + assignedTo + " | " + deps;
                 Console.WriteLine("│ " + row + " │");
             }
         }
@@ -140,14 +153,14 @@ public class ConsoleTaskView<T> : ITaskView
         PrintTitle();
         PrintInfo("Welcome to Task Manager! Starting up...");
         System.Threading.Thread.Sleep(1000);
-        
+
         while (true)
         {
             Console.Clear();
             PrintTitle();
             PrintPageHeader("Main Menu");
             DisplayTasks(_service.GetAllTasks());
-            
+
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.WriteLine("╔════════════════════════════════════════╗");
             Console.WriteLine("║          MAIN MENU OPTIONS             ║");
@@ -162,9 +175,12 @@ public class ConsoleTaskView<T> : ITaskView
             Console.WriteLine("║ 8. View My Tasks (Assigned to you)     ║");
             Console.WriteLine("║ 9. View My Created Tasks               ║");
             Console.WriteLine("║ 10. Exit                               ║");
+            Console.WriteLine("╠════════════════════════════════════════╣");
+            Console.WriteLine("║ 11. Add Task Dependency                ║");
+            Console.WriteLine("║ 12. Remove Task Dependency             ║");
             Console.WriteLine("╚════════════════════════════════════════╝");
             Console.ResetColor();
-            string option = Prompt("\nSelect an option (1-10): ");
+            string option = Prompt("\nSelect an option (1-12): ");
             switch (option)
             {
                 case "1":
@@ -456,10 +472,10 @@ public class ConsoleTaskView<T> : ITaskView
                         string descHeader = "Description".PadRight(descWidth);
                         string statusHeader = "Status".PadRight(statusWidth);
                         string priorityHeader = "Priority".PadRight(priorityWidth);
-                        
+
                         string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader;
                         string separator = new string('─', header.Length);
-                        
+
                         Console.WriteLine("┌" + separator + "┐");
                         Console.WriteLine("│ " + header + " │");
                         Console.WriteLine("├" + separator + "┤");
@@ -468,12 +484,12 @@ public class ConsoleTaskView<T> : ITaskView
                         {
                             var taskObj = task as TaskItem;
                             string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                            
+
                             string descStr = taskObj?.Description ?? "N/A";
                             if (descStr.Length > descWidth)
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
-                            
+
                             string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string priorityStr = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
 
@@ -506,10 +522,10 @@ public class ConsoleTaskView<T> : ITaskView
                         string descHeader = "Description".PadRight(descWidth);
                         string statusHeader = "Status".PadRight(statusWidth);
                         string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-                        
+
                         string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + assignedToHeader;
                         string separator = new string('─', header.Length);
-                        
+
                         Console.WriteLine("┌" + separator + "┐");
                         Console.WriteLine("│ " + header + " │");
                         Console.WriteLine("├" + separator + "┤");
@@ -518,12 +534,12 @@ public class ConsoleTaskView<T> : ITaskView
                         {
                             var taskObj = task as TaskItem;
                             string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-                            
+
                             string descStr = taskObj?.Description ?? "N/A";
                             if (descStr.Length > descWidth)
                                 descStr = descStr.Substring(0, descWidth - 3) + "...";
                             string desc = descStr.PadRight(descWidth);
-                            
+
                             string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
                             string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
 
@@ -533,6 +549,49 @@ public class ConsoleTaskView<T> : ITaskView
                         Console.WriteLine("└" + separator + "┘\n");
                     }
                     Console.WriteLine("Press any key to continue...");
+                    Console.ReadKey();
+                    break;
+                case "11":
+                    Console.Clear();
+                    PrintTitle();
+                    PrintPageHeader("Add Task Dependency");
+                    PrintInfo("Specify which task must be completed BEFORE another task can be marked Done.");
+                    string addDepTaskIdStr = Prompt("Enter task ID (the task that will have a prerequisite): ");
+                    if (!int.TryParse(addDepTaskIdStr, out int addDepTaskId) || addDepTaskId <= 0)
+                    {
+                        PrintError("Invalid task ID.");
+                        Console.ReadKey();
+                        break;
+                    }
+                    string addDepPrereqIdStr = Prompt("Enter prerequisite task ID (must be Done first): ");
+                    if (!int.TryParse(addDepPrereqIdStr, out int addDepPrereqId) || addDepPrereqId <= 0)
+                    {
+                        PrintError("Invalid prerequisite task ID.");
+                        Console.ReadKey();
+                        break;
+                    }
+                    _service.AddDependency(addDepTaskId, addDepPrereqId);
+                    Console.ReadKey();
+                    break;
+                case "12":
+                    Console.Clear();
+                    PrintTitle();
+                    PrintPageHeader("Remove Task Dependency");
+                    string remDepTaskIdStr = Prompt("Enter task ID: ");
+                    if (!int.TryParse(remDepTaskIdStr, out int remDepTaskId) || remDepTaskId <= 0)
+                    {
+                        PrintError("Invalid task ID.");
+                        Console.ReadKey();
+                        break;
+                    }
+                    string remDepPrereqIdStr = Prompt("Enter prerequisite task ID to remove: ");
+                    if (!int.TryParse(remDepPrereqIdStr, out int remDepPrereqId) || remDepPrereqId <= 0)
+                    {
+                        PrintError("Invalid prerequisite task ID.");
+                        Console.ReadKey();
+                        break;
+                    }
+                    _service.RemoveDependency(remDepTaskId, remDepPrereqId);
                     Console.ReadKey();
                     break;
                 case "10":

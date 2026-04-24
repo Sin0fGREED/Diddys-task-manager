@@ -1,4 +1,4 @@
-class TaskService<T> : ITaskService<T> where T : TaskItem
+public class TaskService<T> : ITaskService<T> where T : TaskItem
 {
     private readonly ITaskRepository<T> _repository;
     private readonly IUserContext _userContext;
@@ -26,11 +26,12 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         {
             if (arr[i].Id >= newId) newId = arr[i].Id + 1;
         }
-        var newTask = new TaskItem { 
-            Id = newId, 
-            Description = description, 
-            Status = StatusLevel.ToDo, 
-            Priority = priority, 
+        var newTask = new TaskItem
+        {
+            Id = newId,
+            Description = description,
+            Status = StatusLevel.ToDo,
+            Priority = priority,
             CreationDate = DateTime.Now,
             CreatedBy = _userContext.CurrentUsername ?? "Unown"
         };
@@ -48,17 +49,33 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                 Console.WriteLine("Error: You do not have permission to delete this task.");
                 return;
             }
+            // Check if any task depends on this one before deleting
+            T[] all = _tasks.ToArray();
+            var blockers = new int[all.Length];
+            int blockerCount = 0;
+            for (int i = 0; i < all.Length; i++)
+            {
+                int[] deps = all[i].DependsOnTaskIds;
+                for (int j = 0; j < deps.Length; j++)
+                {
+                    if (deps[j] == id)
+                    {
+                        blockers[blockerCount++] = all[i].Id;
+                        break;
+                    }
+                }
+            }
+            if (blockerCount > 0)
+            {
+                Console.Write("Error: Cannot delete task because the following tasks depend on it: ");
+                for (int i = 0; i < blockerCount; i++)
+                    Console.Write(i == 0 ? $"{blockers[i]}" : $", {blockers[i]}");
+                Console.WriteLine(". Remove those dependencies first.");
+                return;
+            }
+
             _tasks.Remove(found);
-            T[] arr = _tasks.ToArray();
-            for (int i = 0; i < arr.Length; i++)
-            {
-                arr[i].Id = i + 1;
-            }
-            _tasks.Clear();
-            for (int i = 0; i < arr.Length; i++)
-            {
-                _tasks.Add(arr[i]);
-            }
+            // IDs are intentionally NOT renumbered so dependency references remain valid.
             _repository.SaveTasks(_tasks);
         }
     }
@@ -73,13 +90,25 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
                 Console.WriteLine("Error: You do not have permission to modify this task.");
                 return;
             }
-            found.Status = found.Status switch
+            StatusLevel next = found.Status switch
             {
                 StatusLevel.ToDo => StatusLevel.InProgress,
                 StatusLevel.InProgress => StatusLevel.Done,
                 StatusLevel.Done => StatusLevel.ToDo,
                 _ => StatusLevel.ToDo
             };
+            if (next == StatusLevel.Done)
+            {
+                T[] blocking = GetBlockingTasks(id);
+                if (blocking.Length > 0)
+                {
+                    Console.WriteLine("Error: Cannot mark task as Done. The following prerequisite tasks are not yet Done:");
+                    for (int i = 0; i < blocking.Length; i++)
+                        Console.WriteLine($"  Task {blocking[i].Id}: {blocking[i].Description} [{blocking[i].Status}]");
+                    return;
+                }
+            }
+            found.Status = next;
             _repository.SaveTasks(_tasks);
         }
     }
@@ -93,6 +122,18 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
             {
                 Console.WriteLine("Error: You do not have permission to modify this task.");
                 return;
+            }
+            // Enforce dependency rule: cannot move to Done while prerequisites are incomplete
+            if (status == StatusLevel.Done)
+            {
+                T[] blocking = GetBlockingTasks(id);
+                if (blocking.Length > 0)
+                {
+                    Console.WriteLine("Error: Cannot mark task as Done. The following prerequisite tasks are not yet Done:");
+                    for (int i = 0; i < blocking.Length; i++)
+                        Console.WriteLine($"  Task {blocking[i].Id}: {blocking[i].Description} [{blocking[i].Status}]");
+                    return;
+                }
             }
             found.Status = status;
             _repository.SaveTasks(_tasks);
@@ -122,10 +163,10 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         string priorityHeader = "Priority".PadRight(priorityWidth);
         string createdByHeader = "Created By".PadRight(createdByWidth);
         string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-        
+
         string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader;
         string separator = new string('─', header.Length);
-        
+
         Console.WriteLine("┌" + separator + "┐");
         Console.WriteLine("│ " + header + " │");
         Console.WriteLine("├" + separator + "┤");
@@ -242,7 +283,7 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
 
         PrintTaskTable(tasksToDisplay);
     }
-    
+
     public void UpdateTask(int id, string? newDescription = null, PriorityLevel? newPriority = null)
     {
         T found = _tasks.FindById(id);
@@ -336,6 +377,159 @@ class TaskService<T> : ITaskService<T> where T : TaskItem
         // Admin can modify any task
         if (username == "admin") return true;
 
+        return false;
+    }
+
+    // ── Dependency methods ─────────────────────────────────────────────────────
+
+    public void AddDependency(int taskId, int dependsOnTaskId)
+    {
+        if (taskId == dependsOnTaskId)
+        {
+            Console.WriteLine("Error: A task cannot depend on itself.");
+            return;
+        }
+
+        T task = _tasks.FindById(taskId);
+        if (task == null) { Console.WriteLine($"Error: Task {taskId} not found."); return; }
+
+        // Verify the prerequisite task exists
+        T prereq = _tasks.FindById(dependsOnTaskId);
+        if (prereq == null) { Console.WriteLine($"Error: Task {dependsOnTaskId} not found."); return; }
+
+        // Check for duplicate
+        int[] existing = task.DependsOnTaskIds;
+        for (int i = 0; i < existing.Length; i++)
+        {
+            if (existing[i] == dependsOnTaskId)
+            {
+                Console.WriteLine($"Error: Task {taskId} already depends on task {dependsOnTaskId}.");
+                return;
+            }
+        }
+
+        // Cycle check: adding taskId → dependsOnTaskId would create a cycle if
+        // dependsOnTaskId can already reach taskId through its own dependencies.
+        if (WouldCreateCycle(taskId, dependsOnTaskId))
+        {
+            Console.WriteLine($"Error: Adding this dependency would create a circular dependency chain.");
+            return;
+        }
+
+        // Append to the array (no List<T> allowed)
+        int[] newDeps = new int[existing.Length + 1];
+        for (int i = 0; i < existing.Length; i++)
+            newDeps[i] = existing[i];
+        newDeps[existing.Length] = dependsOnTaskId;
+        task.DependsOnTaskIds = newDeps;
+
+        _repository.SaveTasks(_tasks);
+        Console.WriteLine($"Task {taskId} now depends on task {dependsOnTaskId} ({prereq.Description}).");
+    }
+
+    public void RemoveDependency(int taskId, int dependsOnTaskId)
+    {
+        T task = _tasks.FindById(taskId);
+        if (task == null) { Console.WriteLine($"Error: Task {taskId} not found."); return; }
+
+        int[] existing = task.DependsOnTaskIds;
+        int index = -1;
+        for (int i = 0; i < existing.Length; i++)
+        {
+            if (existing[i] == dependsOnTaskId) { index = i; break; }
+        }
+
+        if (index == -1)
+        {
+            Console.WriteLine($"Error: Task {taskId} does not depend on task {dependsOnTaskId}.");
+            return;
+        }
+
+        // Remove from array
+        int[] newDeps = new int[existing.Length - 1];
+        for (int i = 0, j = 0; i < existing.Length; i++)
+        {
+            if (i != index) newDeps[j++] = existing[i];
+        }
+        task.DependsOnTaskIds = newDeps;
+        _repository.SaveTasks(_tasks);
+        Console.WriteLine($"Dependency removed: task {taskId} no longer depends on task {dependsOnTaskId}.");
+    }
+
+    public T[] GetBlockingTasks(int taskId)
+    {
+        T task = _tasks.FindById(taskId);
+        if (task == null) return new T[0];
+
+        int[] deps = task.DependsOnTaskIds;
+        // Count how many are not Done
+        int count = 0;
+        for (int i = 0; i < deps.Length; i++)
+        {
+            try
+            {
+                T prereq = _tasks.FindById(deps[i]);
+                if (prereq.Status != StatusLevel.Done) count++;
+            }
+            catch { /* prerequisite task was deleted — treat as non-blocking */ }
+        }
+
+        T[] result = new T[count];
+        int idx = 0;
+        for (int i = 0; i < deps.Length; i++)
+        {
+            try
+            {
+                T prereq = _tasks.FindById(deps[i]);
+                if (prereq.Status != StatusLevel.Done) result[idx++] = prereq;
+            }
+            catch { }
+        }
+        return result;
+    }
+
+    // DFS cycle detection — uses a hand-rolled int stack (no List<T>).
+    // Returns true if adding edge (newTaskId → dependsOnId) would create a cycle.
+    // Strategy: starting from dependsOnId, follow all DependsOnTaskIds recursively.
+    // If we ever reach newTaskId, a cycle would exist.
+    private bool WouldCreateCycle(int newTaskId, int dependsOnId)
+    {
+        // Manual stack using an int array
+        int maxNodes = _tasks.Count + 1;
+        int[] stack = new int[maxNodes];
+        int[] visited = new int[maxNodes];
+        int stackTop = 0;
+        int visitedCount = 0;
+
+        stack[stackTop++] = dependsOnId;
+
+        while (stackTop > 0)
+        {
+            int current = stack[--stackTop];
+
+            // Check already visited (avoid infinite loops in existing broken data)
+            bool alreadyVisited = false;
+            for (int i = 0; i < visitedCount; i++)
+            {
+                if (visited[i] == current) { alreadyVisited = true; break; }
+            }
+            if (alreadyVisited) continue;
+            visited[visitedCount++] = current;
+
+            if (current == newTaskId) return true; // cycle found
+
+            try
+            {
+                T node = _tasks.FindById(current);
+                int[] deps = node.DependsOnTaskIds;
+                for (int i = 0; i < deps.Length; i++)
+                {
+                    if (stackTop < stack.Length - 1)
+                        stack[stackTop++] = deps[i];
+                }
+            }
+            catch { /* task not found, skip */ }
+        }
         return false;
     }
 }
