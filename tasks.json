@@ -68,5 +68,27 @@
     "CreatedBy": "Hendrik",
     "AssignedTo": "alice",
     "DependsOnTaskIds": []
+  },
+  {
+    "Id": 8,
+    "Description": "Wake up",
+    "Status": 0,
+    "Priority": 2,
+    "CreationDate": "2026-04-24T23:26:13.3796309+02:00",
+    "CreatedBy": "Hendrik",
+    "AssignedTo": null,
+    "DependsOnTaskIds": [
+      9
+    ]
+  },
+  {
+    "Id": 9,
+    "Description": "Get up",
+    "Status": 0,
+    "Priority": 1,
+    "CreationDate": "2026-04-24T23:26:26.0241191+02:00",
+    "CreatedBy": "Hendrik",
+    "AssignedTo": null,
+    "DependsOnTaskIds": []
   }
 ]

@@ -2,6 +2,6 @@
 
 BIJDRAGE AAN PROJECT 1
 
-Stevan -> Alle data structures + feature 1 + unit tests implemented.
-pratik -> feature 3
-Hendrik -> Feature 2 & 4
+stevan -> array, hashmap structure + feature 1 + unit tests
+Pratik -> linkedlist + feature 3
+hendrik -> binary search tree + feature 2 & 4
