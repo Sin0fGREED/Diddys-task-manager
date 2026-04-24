@@ -49,7 +49,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
                 Console.WriteLine("Error: You do not have permission to delete this task.");
                 return;
             }
-            // Check if any task depends on this one before deleting
             T[] all = _tasks.ToArray();
             var blockers = new int[all.Length];
             int blockerCount = 0;
@@ -75,7 +74,7 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
             }
 
             _tasks.Remove(found);
-            // IDs are intentionally NOT renumbered so dependency references remain valid.
+
             _repository.SaveTasks(_tasks);
         }
     }
@@ -123,7 +122,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
                 Console.WriteLine("Error: You do not have permission to modify this task.");
                 return;
             }
-            // Enforce dependency rule: cannot move to Done while prerequisites are incomplete
             if (status == StatusLevel.Done)
             {
                 T[] blocking = GetBlockingTasks(id);
@@ -380,8 +378,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
         return false;
     }
 
-    // ── Dependency methods ─────────────────────────────────────────────────────
-
     public void AddDependency(int taskId, int dependsOnTaskId)
     {
         if (taskId == dependsOnTaskId)
@@ -392,12 +388,9 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
 
         T task = _tasks.FindById(taskId);
         if (task == null) { Console.WriteLine($"Error: Task {taskId} not found."); return; }
-
-        // Verify the prerequisite task exists
         T prereq = _tasks.FindById(dependsOnTaskId);
         if (prereq == null) { Console.WriteLine($"Error: Task {dependsOnTaskId} not found."); return; }
 
-        // Check for duplicate
         int[] existing = task.DependsOnTaskIds;
         for (int i = 0; i < existing.Length; i++)
         {
@@ -408,15 +401,12 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
             }
         }
 
-        // Cycle check: adding taskId → dependsOnTaskId would create a cycle if
-        // dependsOnTaskId can already reach taskId through its own dependencies.
         if (WouldCreateCycle(taskId, dependsOnTaskId))
         {
             Console.WriteLine($"Error: Adding this dependency would create a circular dependency chain.");
             return;
         }
 
-        // Append to the array (no List<T> allowed)
         int[] newDeps = new int[existing.Length + 1];
         for (int i = 0; i < existing.Length; i++)
             newDeps[i] = existing[i];
@@ -445,7 +435,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
             return;
         }
 
-        // Remove from array
         int[] newDeps = new int[existing.Length - 1];
         for (int i = 0, j = 0; i < existing.Length; i++)
         {
@@ -462,7 +451,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
         if (task == null) return new T[0];
 
         int[] deps = task.DependsOnTaskIds;
-        // Count how many are not Done
         int count = 0;
         for (int i = 0; i < deps.Length; i++)
         {
@@ -488,13 +476,8 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
         return result;
     }
 
-    // DFS cycle detection — uses a hand-rolled int stack (no List<T>).
-    // Returns true if adding edge (newTaskId → dependsOnId) would create a cycle.
-    // Strategy: starting from dependsOnId, follow all DependsOnTaskIds recursively.
-    // If we ever reach newTaskId, a cycle would exist.
     private bool WouldCreateCycle(int newTaskId, int dependsOnId)
     {
-        // Manual stack using an int array
         int maxNodes = _tasks.Count + 1;
         int[] stack = new int[maxNodes];
         int[] visited = new int[maxNodes];
@@ -507,7 +490,6 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
         {
             int current = stack[--stackTop];
 
-            // Check already visited (avoid infinite loops in existing broken data)
             bool alreadyVisited = false;
             for (int i = 0; i < visitedCount; i++)
             {
@@ -516,7 +498,7 @@ public class TaskService<T> : ITaskService<T> where T : TaskItem
             if (alreadyVisited) continue;
             visited[visitedCount++] = current;
 
-            if (current == newTaskId) return true; // cycle found
+            if (current == newTaskId) return true;
 
             try
             {

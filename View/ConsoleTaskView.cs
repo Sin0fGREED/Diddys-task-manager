@@ -16,14 +16,14 @@ public class ConsoleTaskView<T> : ITaskView
         Console.WriteLine(@"
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
-║         ██████╗ ██╗██████╗ ██████╗ ██╗   ██╗███████╗    ║
-║         ██╔══██╗██║██╔══██╗██╔══██╗╚██╗ ██╔╝██╔════╝    ║
-║         ██║  ██║██║██║  ██║██║  ██║ ╚████╔╝ ███████╗    ║
-║         ██║  ██║██║██║  ██║██║  ██║  ╚██╔╝  ╚════██║    ║
-║         ██████╔╝██║██████╔╝██████╔╝   ██║   ███████║    ║
-║         ╚═════╝ ╚═╝╚═════╝ ╚═════╝    ╚═╝   ╚══════╝    ║
+║         ██████╗ ██╗██████╗ ██████╗ ██╗   ██╗███████╗      ║
+║         ██╔══██╗██║██╔══██╗██╔══██╗╚██╗ ██╔╝██╔════╝      ║
+║         ██║  ██║██║██║  ██║██║  ██║ ╚████╔╝ ███████╗      ║
+║         ██║  ██║██║██║  ██║██║  ██║  ╚██╔╝  ╚════██║      ║
+║         ██████╔╝██║██████╔╝██████╔╝   ██║   ███████║      ║
+║         ╚═════╝ ╚═╝╚═════╝ ╚═════╝    ╚═╝   ╚══════╝      ║
 ║                                                           ║
-║              TASK MANAGER 📋 for DIDDY                   ║
+║              TASK MANAGER     for DIDDY                   ║
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
 ");
@@ -73,72 +73,123 @@ public class ConsoleTaskView<T> : ITaskView
 
     void DisplayTasks(T[]? tasks)
     {
-        if (tasks == null || tasks.Length == 0) return;
 
-        Console.WriteLine($"\n╔════════════════════════════════════════════════════════════════════╗");
-        Console.WriteLine($"║  ToDo List (Logged in as: {_userContext.CurrentUsername,-50} ║");
-        Console.WriteLine($"╚════════════════════════════════════════════════════════════════════╝\n");
+        const int colInner = 28;
 
-        // Column widths
-        int idWidth = 4;
-        int descWidth = 25;
-        int statusWidth = 10;
-        int priorityWidth = 8;
-        int createdByWidth = 12;
-        int assignedToWidth = 12;
-        int depsWidth = 14;
+        string ColHeader(string label) => ("─ " + label + " ").PadRight(colInner, '─');
+        string ColBlank() => new string(' ', colInner);
 
-        // Header
-        string idHeader = "ID".PadRight(idWidth);
-        string descHeader = "Description".PadRight(descWidth);
-        string statusHeader = "Status".PadRight(statusWidth);
-        string priorityHeader = "Priority".PadRight(priorityWidth);
-        string createdByHeader = "Created By".PadRight(createdByWidth);
-        string assignedToHeader = "Assigned To".PadRight(assignedToWidth);
-        string depsHeader = "Depends On".PadRight(depsWidth);
+        T[] all = tasks ?? new T[0];
 
-        string header = idHeader + " | " + descHeader + " | " + statusHeader + " | " + priorityHeader + " | " + createdByHeader + " | " + assignedToHeader + " | " + depsHeader;
-        string separator = new string('─', header.Length);
-        Console.WriteLine("┌" + separator + "┐");
-        Console.WriteLine("│ " + header + " │");
-        Console.WriteLine("├" + separator + "┤");
+        // Bucket tasks by status
+        var todo = new System.Collections.Generic.List<TaskItem>();
+        var inProg = new System.Collections.Generic.List<TaskItem>();
+        var done = new System.Collections.Generic.List<TaskItem>();
 
-        // Rows
-        foreach (var task in tasks)
+        foreach (var t in all)
         {
-            if (task != null)
+            if (t is TaskItem ti)
             {
-                var taskObj = task as TaskItem;
-                string id = (taskObj?.Id.ToString() ?? "?").PadRight(idWidth);
-
-                string descStr = taskObj?.Description ?? "N/A";
-                if (descStr.Length > descWidth)
-                    descStr = descStr.Substring(0, descWidth - 3) + "...";
-                string desc = descStr.PadRight(descWidth);
-
-                string status = ((taskObj?.Status ?? StatusLevel.ToDo) switch { StatusLevel.ToDo => "⧖ To Do", StatusLevel.InProgress => "▶ In Progress", StatusLevel.Done => "✓ Done", _ => "⧖ To Do" }).PadRight(statusWidth);
-                string priority = (taskObj?.Priority ?? PriorityLevel.Medium).ToString().PadRight(priorityWidth);
-                string createdBy = (taskObj?.CreatedBy ?? "Unknown").PadRight(createdByWidth);
-                string assignedTo = (taskObj?.AssignedTo ?? "Unassigned").PadRight(assignedToWidth);
-
-                // Build dependency string (e.g. "→ 1,3" or "none")
-                string depsStr = "none";
-                if (taskObj?.DependsOnTaskIds != null && taskObj.DependsOnTaskIds.Length > 0)
+                switch (ti.Status)
                 {
-                    depsStr = "→ ";
-                    for (int i = 0; i < taskObj.DependsOnTaskIds.Length; i++)
-                        depsStr += (i == 0 ? "" : ",") + taskObj.DependsOnTaskIds[i];
+                    case StatusLevel.InProgress: inProg.Add(ti); break;
+                    case StatusLevel.Done: done.Add(ti); break;
+                    default: todo.Add(ti); break;
                 }
-                if (depsStr.Length > depsWidth) depsStr = depsStr.Substring(0, depsWidth - 3) + "...";
-                string deps = depsStr.PadRight(depsWidth);
-
-                string row = id + " | " + desc + " | " + status + " | " + priority + " | " + createdBy + " | " + assignedTo + " | " + deps;
-                Console.WriteLine("│ " + row + " │");
             }
         }
 
-        // Footer
-        Console.WriteLine("└" + separator + "┘\n");
+
+        string[] BuildLines(System.Collections.Generic.List<TaskItem> items)
+        {
+            var lines = new System.Collections.Generic.List<string>();
+            foreach (var ti in items)
+            {
+                string idPart = $"[#{ti.Id}] ";
+                int descAvail = colInner - idPart.Length;
+                string descStr = ti.Description ?? "N/A";
+                if (descStr.Length > descAvail) descStr = descStr.Substring(0, descAvail - 1) + "…";
+                string line1 = (idPart + descStr).PadRight(colInner);
+
+                string prio = ti.Priority.ToString().PadRight(6);
+                string assigned = (ti.AssignedTo ?? "Unassigned");
+                if (assigned.Length > colInner - 9) assigned = assigned.Substring(0, colInner - 9 - 1) + "…";
+                string line2 = ("  " + prio + " · " + assigned).PadRight(colInner);
+
+                lines.Add(line1);
+                lines.Add(line2);
+                if (ti.DependsOnTaskIds != null && ti.DependsOnTaskIds.Length > 0)
+                {
+                    string depsStr = "  → " + string.Join(", ", System.Linq.Enumerable.Select(ti.DependsOnTaskIds, id => "#" + id));
+                    if (depsStr.Length > colInner) depsStr = depsStr.Substring(0, colInner - 1) + "…";
+                    lines.Add(depsStr.PadRight(colInner));
+                }
+                lines.Add(ColBlank());
+            }
+            return lines.ToArray();
+        }
+
+        string[] todoLines = BuildLines(todo);
+        string[] inProgLines = BuildLines(inProg);
+        string[] doneLines = BuildLines(done);
+
+        int rowCount = Math.Max(todoLines.Length, Math.Max(inProgLines.Length, doneLines.Length));
+
+        string PadLine(string[] arr, int idx) =>
+            (idx < arr.Length ? arr[idx] : ColBlank());
+
+        Console.WriteLine();
+
+        // Top border
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.WriteLine("┌" + new string('─', colInner) + "┬" + new string('─', colInner) + "┬" + new string('─', colInner) + "┐");
+
+        // Column headers
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.Write("│"); Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.Write(ColHeader("⧖ To Do").PadRight(colInner));
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.Write("│");
+        Console.ForegroundColor = ConsoleColor.Blue;
+        Console.Write(ColHeader("▶ In Progress").PadRight(colInner));
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.Write("│");
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.Write(ColHeader("✓ Done").PadRight(colInner));
+        Console.ForegroundColor = ConsoleColor.Yellow; Console.WriteLine("│");
+
+        // Header separator
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.WriteLine("├" + new string('─', colInner) + "┼" + new string('─', colInner) + "┼" + new string('─', colInner) + "┤");
+
+        // Rows
+        if (rowCount == 0)
+        {
+            string empty = "  (no tasks)".PadRight(colInner);
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("│" + empty + "│" + empty + "│" + empty + "│");
+        }
+        else
+        {
+            for (int i = 0; i < rowCount; i++)
+            {
+                string tl = PadLine(todoLines, i);
+                string il = PadLine(inProgLines, i);
+                string dl = PadLine(doneLines, i);
+
+                Console.ForegroundColor = ConsoleColor.DarkGray; Console.Write("│");
+                Console.ForegroundColor = ConsoleColor.White; Console.Write(tl);
+                Console.ForegroundColor = ConsoleColor.DarkGray; Console.Write("│");
+                Console.ForegroundColor = ConsoleColor.White; Console.Write(il);
+                Console.ForegroundColor = ConsoleColor.DarkGray; Console.Write("│");
+                Console.ForegroundColor = ConsoleColor.White; Console.Write(dl);
+                Console.ForegroundColor = ConsoleColor.DarkGray; Console.WriteLine("│");
+            }
+        }
+
+        // Bottom border
+        Console.ForegroundColor = ConsoleColor.DarkGray;
+        Console.WriteLine("└" + new string('─', colInner) + "┴" + new string('─', colInner) + "┴" + new string('─', colInner) + "┘");
+        Console.ResetColor();
+        Console.WriteLine();
     }
 
     string Prompt(string prompt)

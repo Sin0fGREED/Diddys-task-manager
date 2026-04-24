@@ -10,15 +10,13 @@ public interface ITaskService<T>
 
     void UpdateTask(int id, string? newDescription = null, PriorityLevel? newPriority = null);
 
-    // New methods for task assignment
     void AssignTask(int id, string assigneeName);
     void UnassignTask(int id);
     T[] GetTasksAssignedToUser(string username);
     T[] GetTasksCreatedByUser(string username);
     bool CanModifyTask(int taskId, string username);
 
-    // Task dependency methods
     void AddDependency(int taskId, int dependsOnTaskId);
     void RemoveDependency(int taskId, int dependsOnTaskId);
-    T[] GetBlockingTasks(int taskId); // tasks that are blocking this task from being Done
+    T[] GetBlockingTasks(int taskId);
 }
